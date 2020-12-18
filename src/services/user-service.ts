@@ -2,6 +2,7 @@ import { Api } from './api';
 import { UserModel } from '../models/UserResponseModel';
 import { NewUserResponseModel } from '../models/NewUserResponseModel';
 import { NewImageResponseModel } from '../models/NewImageResponseModel';
+import { UserRequestModel } from '../models/UserRequestModel';
 
 class UserService {
   getUsersList = async (
@@ -37,9 +38,22 @@ class UserService {
     }
   }
 
-  addUser = async (formData: FormData): Promise<[NewUserResponseModel | null, Error | null]> => {
+  editUser = async(
+    data: UserModel
+  ): Promise<[number | null, Error | null]> => {
     try {
-      const data = await Api.post<NewUserResponseModel>('/users', formData);
+      await Api.put(`/users/${data.id}`, JSON.stringify(data));
+      return [data.id, null];
+    } catch (e) {
+      return [null, e];
+    }
+  }
+
+  addUser = async (
+    formData: UserRequestModel
+  ): Promise<[NewUserResponseModel | null, Error | null]> => {
+    try {
+      const data = await Api.post<NewUserResponseModel>('/users', JSON.stringify(formData));
       return [data, null];
     } catch (e) {
       return [null, e];
@@ -50,7 +64,7 @@ class UserService {
     formData: FormData
   ): Promise<[NewImageResponseModel | null, Error | null]> => {
     try {
-      const data = await Api.post<NewImageResponseModel>('/images', formData);
+      const data = await Api.upload<NewImageResponseModel>('/images', formData);
       return [data, null];
     } catch (e) {
       return [null, e];

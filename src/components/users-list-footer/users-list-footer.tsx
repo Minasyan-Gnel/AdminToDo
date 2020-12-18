@@ -9,38 +9,37 @@ import {
   pageRangeWrapperStyles, paginationNumbersContainerStyles
 } from './users-list-footer-styles';
 
+const rowsPerPage = [
+  {
+    label: '10 / page',
+    value: 10,
+  },
+  {
+    label: '50 / page',
+    value: 50,
+  },
+  {
+    label: '100 / page',
+    value: 100,
+  }
+];
+
 export const UsersListFooter: FC = () => {
   const [pageRange, setPageRange] = useState([1, 10]);
 
-  const { methods, page: selectedPage, totalCount } = useContext(UsersContext);
+  const { methods, page: selectedPage, totalCount, limit } = useContext(UsersContext);
 
   const numberOfPage = useMemo((): number[] => (
     getNumbersFromRange(pageRange[0], pageRange[1])
-  ), [pageRange, totalCount]);
+  ), [pageRange]);
 
   const totalPageCount = useMemo(() => (
-    Math.ceil(totalCount / 10)
-  ), [totalCount]);
+    Math.ceil(totalCount / limit)
+  ), [totalCount, limit]);
 
   const changePageRange = useCallback((e) => {
-    const [from, to] = e.target.value.split('/');
-    setPageRange([parseInt(from), parseInt(to)]);
+    methods.changeLimit(e.target.value);
   }, []);
-
-  const optionsList = useMemo(() => {
-    const options = [];
-    const a = totalCount / 10;
-    let pageCount = a - (a % 10);
-
-    while (pageCount >= 10) {
-      const from = (pageCount - 10) || 1;
-      const to = pageCount;
-      options.push(<option value={`${from}/${to}`} key={from}>{`${from} / ${to}`}</option>);
-      pageCount -= 10;
-    }
-
-    return options.reverse();
-  }, [totalCount]);
 
   const pageChangeHandler = useCallback((page: number) => () => {
     methods.changePage(page);
@@ -72,13 +71,11 @@ export const UsersListFooter: FC = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedPage >= pageRange[1]) {
-      if (selectedPage + 10 > totalPageCount) {
-        return setPageRange([totalPageCount - 9, totalPageCount]);
-      }
-      setPageRange([selectedPage, selectedPage + 10]);
+    if (selectedPage + 10 > totalPageCount) {
+      return setPageRange([totalPageCount - (totalPageCount - 1), totalPageCount]);
     }
-  }, [selectedPage, totalCount, totalPageCount]);
+    setPageRange([selectedPage, selectedPage + 9]);
+  }, [selectedPage, totalPageCount]);
 
   return (
     <div className={usersListFooterStyles}>
@@ -101,7 +98,9 @@ export const UsersListFooter: FC = () => {
             </button>
           </div>
           <select className={pageRangeWrapperStyles} onChange={changePageRange}>
-            {optionsList.length ? optionsList : <option>1 / 10</option>}
+            {rowsPerPage.map(({ label, value }) => (
+              <option key={label} value={value}>{label}</option>
+            ))}
           </select>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import React, { FC, FormEvent, useRef, useState } from 'react';
+import React, { FC, FormEvent, useContext, useRef, useState, ChangeEvent, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 
 import { Icon } from '../shared/icon/icon';
@@ -12,9 +12,15 @@ import {
 } from './new-user-styles';
 
 import UsersService from '../../services/user-service';
+import { UsersContext } from '../../contexts/users-context';
+import UserService from '../../services/user-service';
+import { UserModel } from '../../models/UserResponseModel';
 
 export const NewUser: FC = () => {
-  const [fileName, setFileName] = useState('Photo');
+  const { selectedUser, methods, page, orders } = useContext(UsersContext);
+
+  const [photoName, setPhotoName] = useState<string>('Photo');
+  const [formData, setFormData] = useState(selectedUser as UserModel);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -23,15 +29,13 @@ export const NewUser: FC = () => {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const formData = new FormData();
-
-    Object.values(e.target)
-      .filter(target => (target.tagName === 'INPUT' && target.name !== 'photo'))
-      .forEach(target => {
-        formData.append(target.name, target.value);
-      });
-
-    await UsersService.addUser(formData);
+    if (selectedUser) {
+      await UsersService.editUser(formData as UserModel);
+    } else {
+      await UsersService.addUser(formData as UserModel);
+    }
+    const [data] = await UserService.getUsersList(page, 10, orders);
+    methods.updateUsers(data);
     history.push('/');
   };
 
@@ -39,28 +43,71 @@ export const NewUser: FC = () => {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFileName(e.target.files[0].name);
-      const formData = new FormData();
-      formData.append('file', e.target.files[0]);
+      setPhotoName(e.target.files[0].name);
+      const form = new FormData();
+      form.append('file', e.target.files[0]);
 
-      UsersService.uploadImage(formData);
+      const [data] = await UsersService.uploadImage(form);
+      if (data) {
+        setFormData({
+          ...formData,
+          photo: data.url
+        });
+      }
     }
   };
+
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  useEffect(() => () => {
+    methods.selectUser(null);
+  }, []);
+
 
   return (
     <div className={newUserWrapperStyles}>
       <form className={formStyles} onSubmit={handleSubmit}>
-        <input type="text" placeholder="User name" name="name" className={inputStyles} />
+        <input type="text" placeholder="User name" name="name" className={inputStyles} onChange={handleInputChange} value={formData?.name} />
         <button className={choosePhotoBtnStyles} type="button" onClick={handleButtonClick}>
           <Icon icon="photo" size={18} />
-          <span>{fileName}</span>
+          <span>{photoName}</span>
         </button>
-        <input type="file" name="photo" ref={fileInputRef} className={fileInputStyles} onChange={handleFileChange} />
-        <input type="text" placeholder="Email" name="email" className={inputStyles} />
-        <input type="text" placeholder="Location" name="location" className={inputStyles} />
-        <button type="submit" className={saveBtnStyles}>Save</button>
+        <input
+          type="file"
+          name="photo"
+          ref={fileInputRef}
+          className={fileInputStyles}
+          onChange={handleFileChange}
+        />
+        <input
+          type="text"
+          placeholder="Email"
+          name="email"
+          className={inputStyles}
+          onChange={handleInputChange}
+          value={formData?.email}
+        />
+        <input
+          type="text"
+          placeholder="Location"
+          name="location"
+          className={inputStyles}
+          onChange={handleInputChange}
+          value={formData?.location}
+        />
+        <button
+          type="submit"
+          className={saveBtnStyles}
+          disabled={!formData?.photo}
+        >{selectedUser && !!Object.values(selectedUser).length ? 'Edit' : 'Save'}
+        </button>
       </form>
     </div>
   );

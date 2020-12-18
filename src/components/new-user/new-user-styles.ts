@@ -39,6 +39,10 @@ export const saveBtnStyles = css`
     border-radius: 4px;
     color: #FFFFFF;
     cursor: pointer;
+    &:disabled {
+        opacity: 0.5;
+        cursor: no-drop;
+    }
 `;
 
 export const fileInputStyles = css`

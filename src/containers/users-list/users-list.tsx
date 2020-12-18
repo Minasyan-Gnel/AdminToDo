@@ -27,6 +27,9 @@ export const UsersList: FC = () => {
         <Route path="/new-user">
           <NewUser />
         </Route>
+        <Route path="/edit-user">
+          <NewUser />
+        </Route>
         <Route path="/">
           <UsersListBody />
           <UsersListFooter />

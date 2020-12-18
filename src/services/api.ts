@@ -18,6 +18,34 @@ export const Api = {
   ),
 
   post: <T = unknown>(url: string, data: any): Promise<T> => (
+    fetch(`${baseUrl}${url}`, {
+      method: 'POST',
+      body: data,
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+      .then((res) => {
+        if (!res.ok) { throw res; }
+        return res.json();
+      })
+  ),
+
+  put: <T = unknown>(url: string, data: any): Promise<T> => (
+    fetch(`${baseUrl}${url}`, {
+      method: 'PUT',
+      body: data,
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+      .then((res) => {
+        if (!res.ok) { throw res; }
+        return res.json();
+      })
+  ),
+
+  upload: <T = unknown>(url: string, data: any): Promise<T> => (
     fetch(`${baseUrl}${url}`, { method: 'POST', body: data })
       .then((res) => {
         if (!res.ok) { throw res; }
